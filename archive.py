@@ -3,6 +3,7 @@ import sys
 from subprocess import run, PIPE, DEVNULL
 
 import config
+import web_page
 
 # URL helpers
 without_scheme = lambda url: url.replace('http://', '').replace('https://', '').replace('ftp://', '')
@@ -21,16 +22,16 @@ def grab_link(path):
     link = f.readline().strip()
 
   info = {
-      'url': link,
-      'domain': domain(link),
-      'base_url': base_url(link),
-      'title': base_url(link),
-      'file_name': file_name(link),
-      'page': without_extension(file_name(link))
+    'url': link,
+    'domain': domain(link),
+    'base_url': base_url(link),
+    'title': base_url(link),
+    'file_name': file_name(link),
+    'page': without_extension(file_name(link))
   }
   return info
 
-def fetch_wget(link, timeout=config.TIMEOUT):
+def fetch_wget(link, link_file, timeout=config.TIMEOUT):
   CMD = [
     *'wget -E -H -k -p -e robots=off'.split(' '),
     link['url'],
@@ -42,6 +43,17 @@ def fetch_wget(link, timeout=config.TIMEOUT):
       print('       got wget response code {}:'.format(result.returncode))
       print('\n'.join('         ' + line for line in (result.stderr or result.stdout).decode().rsplit('\n', 10)[-10:] if line.strip()))
       # raise Exception('Failed to wget download')
+    else:
+      csv_file = os.path.join(config.ARCHIVE_DIR, "index.csv")
+      web_page.WriteDictToCSV(csv_file, link)
+
+      # Removes first line from file
+      CMD2 = [
+        *'sed -i 1d'.split(' '),
+        link_file,
+      ]
+      result = run(CMD2, stdout=PIPE, stderr=PIPE, cwd=config.ROOT_FOLDER, timeout=timeout + 1)
+
   except Exception as e:
     print('       Run to see full output:', 'cd {}; {}'.format(config.ARCHIVE_DIR, ' '.join(CMD)))
 
@@ -58,5 +70,8 @@ if __name__ == "__main__":
   if not os.path.exists(config.ARCHIVE_DIR):
     os.makedirs(config.ARCHIVE_DIR)
 
+  # Loops through entire file, removing successfully downloaded links
   link_info = grab_link(link_file)
-  fetch_wget(link_info)
+  while link_info['url'].strip():
+    fetch_wget(link_info, link_file)
+    link_info = grab_link(link_file)

@@ -9,10 +9,6 @@ import config
 
 header = ['url', 'domain', 'base_url', 'title', 'file_name', 'page']
 env = Environment(loader=FileSystemLoader('templates'))
-#env = Environment(
-  #loader=PackageLoader('web_page', 'templates'),
-  #autoescape=select_autoescape(['html', 'xml'])
-#)
 
 def ReadCSVasDict(csv_file):
   link_dict = []

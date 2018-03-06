@@ -27,7 +27,8 @@ def grab_link(path):
     'base_url': base_url(link),
     'title': base_url(link),
     'file_name': file_name(link),
-    'page': without_extension(file_name(link))
+    'page': without_extension(file_name(link)),
+    'archive_url': ""
   }
   return info
 
@@ -93,6 +94,37 @@ def rem_link(link, link_file, timeout=config.TIMEOUT):
   except Exception as e:
     print('       Run to see full output:', 'cd {}; {}'.format(config.ROOT_FOLDER, ' '.join(CMD)))
 
+def archive_dot_org(link, timeout=config.TIMEOUT):
+  """submit site to archive.org for archiving via their service, save returned archive url"""
+
+  submit_url = 'https://web.archive.org/save/{}'.format(without_query(link['url']))
+
+  success = False
+  CMD = ['curl', '-I', submit_url]
+  try:
+    result = run(CMD, stdout=PIPE, stderr=DEVNULL, cwd=config.ARCHIVE_DIR, timeout=timeout + 1)  # archive.org.txt
+
+    # Parse archive.org response headers
+    headers = result.stdout.splitlines()
+    content_location = [h for h in headers if b'Content-Location: ' in h]
+    errors = [h for h in headers if h and b'X-Archive-Wayback-Runtime-Error: ' in h]
+
+    if content_location:
+      archive_path = content_location[0].split(b'Content-Location: ', 1)[-1].decode('utf-8')
+      saved_url = 'https://web.archive.org{}'.format(archive_path)
+      link['archive_url'] = saved_url
+      success = True
+
+    elif len(errors) == 1 and b'RobotAccessControlException' in errors[0]:
+      output = submit_url
+      raise Exception('Archive.org denied by {}/robots.txt'.format(link['domain']))
+    elif errors:
+      raise Exception(', '.join(e.decode() for e in errors))
+    else:
+      raise Exception('Failed to find "Content-Location" URL header in Archive.org response.')
+  except Exception as e:
+    print('       Visit url to see output:', ' '.join(CMD))
+
 if __name__ == "__main__":
   argc = len(sys.argv)
 
@@ -109,12 +141,14 @@ if __name__ == "__main__":
   # Loops through entire file, removing successfully downloaded links
   link_info = grab_link(link_file)
   while link_info['url'].strip():
-    fetch_wget(link_info)
-    fetch_pdf(link_info)
-    fetch_screenshot(link_info)
+    if config.FETCH_WGET:       fetch_wget(link_info)
+    if config.FETCH_PDF:        fetch_pdf(link_info)
+    if config.FETCH_SCREENSHOT: fetch_screenshot(link_info)
+    if config.SUBMIT_ARCHIVE:   archive_dot_org(link_info)
     rem_link(link_info, link_file)
     link_info = grab_link(link_file)
   
   # Creates index page from links stored in CSV
   csv_file = os.path.join(config.ARCHIVE_DIR, "index.csv")
-  web_page.ReadCSVasDict(csv_file)
+  if os.path.exists(csv_file):
+    web_page.ReadCSVasDict(csv_file)

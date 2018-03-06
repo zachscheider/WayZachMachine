@@ -1,13 +1,11 @@
 import os
 import csv
 
-from datetime import datetime
-from string import Template
-from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader
 
 import config
 
-header = ['url', 'domain', 'base_url', 'title', 'file_name', 'page']
+header = ['url', 'domain', 'base_url', 'title', 'file_name', 'page', 'archive_url']
 env = Environment(loader=FileSystemLoader('templates'))
 
 def ReadCSVasDict(csv_file):

@@ -75,3 +75,6 @@ if __name__ == "__main__":
   while link_info['url'].strip():
     fetch_wget(link_info, link_file)
     link_info = grab_link(link_file)
+  
+  csv_file = os.path.join(config.ARCHIVE_DIR, "index.csv")
+  web_page.ReadCSVasDict(csv_file)

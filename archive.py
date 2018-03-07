@@ -15,7 +15,7 @@ without_extension = lambda file_name: file_name.split('.')[0]
 domain = lambda url: without_hash(without_query(without_path(without_scheme(url))))
 base_url = lambda url: without_query(without_scheme(url))[:without_query(without_scheme(url)).rfind('/')+1]
 
-def grab_link(path):
+def grab_link(link_file):
   # Read first line of file
   link = ""
   with open(link_file, 'r') as f:

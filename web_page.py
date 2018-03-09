@@ -18,6 +18,7 @@ def ReadCSVasDict(csv_file):
       reader = csv.DictReader(csvfile)
       for line in reader:
         link_dict.append(line)
+      link_dict = reversed(link_dict)
       template = env.get_template('index.html')
       render_index = str.encode(template.render(items=link_dict))
       with open(os.path.join(config.ARCHIVE_DIR, "index.html"), "wb") as fh:

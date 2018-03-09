@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from subprocess import run, PIPE, DEVNULL
+from subprocess import run, Popen, PIPE, DEVNULL
 from time import strftime
 
 import config
@@ -42,12 +42,14 @@ def grab_link(link_file):
 
 def fetch_wget(link, timeout=config.TIMEOUT):
   CMD = [
-    *'wget -E -H -k -p -e robots=off'.split(' '),
+    *'wget -E -H -k -p -q --show-progress -e robots=off'.split(' '),
     link['url'],
   ]
 
   try:
-    result = run(CMD, stdout=PIPE, stderr=PIPE, cwd=config.ARCHIVE_DIR, timeout=timeout + 1)  # index.html
+    with Popen(CMD, stdout=PIPE, bufsize=1, universal_newlines=True, cwd=config.ARCHIVE_DIR) as result:
+     for line in result.stdout:
+        print(line, end='')
     if result.returncode > 0:
       print('       got wget response code {}:'.format(result.returncode))
       print('\n'.join('         ' + line for line in (result.stderr or result.stdout).decode().rsplit('\n', 10)[-10:] if line.strip()))

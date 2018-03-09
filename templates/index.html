@@ -9,7 +9,6 @@
             height: 100%;
             font-size: 20px;
             font-weight: 200;
-            text-align: center;
             margin: 0px;
             padding: 0px;
             font-family: "Gill Sans", Helvetica, sans-serif;
@@ -18,6 +17,7 @@
             background-color: #aa1e55;
             color: white;
             padding: 10px;
+            text-align: center;
         }
         header h1 {
             font-weight: 300;
@@ -65,29 +65,36 @@
 </head>
 <body>
     <header>
-        <h1 title="Last modified $time_updated">
+        <h1>
             <img src="https://nicksweeting.com/images/archive.png" height="36px">
             Archived Sites <img src="https://getpocket.com/favicon.ico" height="36px"> <br/>
         </h1>
     </header>
-    <table style="width:100%;height: 90%; overflow-y: scroll;table-layout: fixed">
+    <table style="width:100%;height: 90%; overflow-y: scroll">
         <thead>
             <tr>
+                <th style="width: 10vw;">Timestamp</th>
+                <th style="width: 45vw;">Saved Articles</th>
                 <th style="width: 50px">Files</th>
                 <th style="width: 50px">PDF</th>
                 <th style="width: 60px;font-size:0.8em;">Screenshot</th>
                 <th style="width: 50px">A.org</th>
-                <th style="width: 100px">Original URL</th>
+                <th style="width: 20vw">Original URL</th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
             <tr>
+                <td>{{ item.timestamp }}</td>
+                <td><a href="{{ item.base_url + item.file_name }}" style="font-size:1.4em;text-decoration:none;color:black;" title="{{ item.title }}">
+                    <img src="{{ item.domain + '/favicon.ico' }}">
+                    {{ item.title }} <small style="background-color: #eee;border-radius:4px; float:right"></small>
+                </td>
                 <td style="text-align:center"><a href="{{ item.base_url + item.file_name }}" title="Files">📂</a></td>
                 <td style="text-align:center"><a href="{{ item.base_url + item.page + '.pdf'}}" title="PDF">📄</a></td>
                 <td style="text-align:center"><a href="{{ item.base_url + item.page + '.png'}}" title="Screenshot">🖼</a></td>
                 <td style="text-align:center"><a href="{{ item.archive_url }}" title="Archive.org">🏛</a></td>
-                <td>🔗 <img src="{{ item.favicon }}" height="16px"> <a href="{{ item.url }}">{{ item.url }}</a></td>
+                <td>🔗 <img src="{{ item.domain + '/favicon.ico' }}" height="16px"> <a href="{{ item.url }}">{{ item.url }}</a></td>
             </tr>
             {% endfor %}
         </tbody>

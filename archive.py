@@ -1,6 +1,11 @@
 import os
 import sys
+import pytz
+from datetime import datetime
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
 from subprocess import run, PIPE, DEVNULL
+from time import strftime
 
 import config
 import web_page
@@ -21,14 +26,17 @@ def grab_link(link_file):
   with open(link_file, 'r') as f:
     link = f.readline().strip()
 
+  currTime = datetime.now(pytz.timezone(config.TIMEZONE)).strftime("%Y-%m-%d %H:%M:%S")
+  theTitle = base_url(link) if link == "" else BeautifulSoup(urlopen(link), "lxml").title.string
   info = {
     'url': link,
     'domain': domain(link),
     'base_url': base_url(link),
-    'title': base_url(link),
+    'title': theTitle,
     'file_name': file_name(link),
     'page': without_extension(file_name(link)),
-    'archive_url': ""
+    'archive_url': "",
+    'timestamp': currTime
   }
   return info
 
@@ -125,6 +133,22 @@ def archive_dot_org(link, timeout=config.TIMEOUT):
   except Exception as e:
     print('       Visit url to see output:', ' '.join(CMD))
 
+def fetch_favicon(link, timeout=config.TIMEOUT):
+    """download site favicon from google's favicon api"""
+
+    favPath = os.path.join(config.ARCHIVE_DIR, link['domain'])
+    if os.path.exists(os.path.join(favPath, 'favicon.ico')):
+        return
+
+    CMD = ['curl', 'https://www.google.com/s2/favicons?domain={domain}'.format(**link)]
+    fout = open('{}/favicon.ico'.format(favPath), 'w')
+    try:
+        run(CMD, stdout=fout, stderr=DEVNULL, cwd=favPath, timeout=timeout + 1)  # favicon.ico
+        fout.close()
+    except Exception as e:
+        fout.close()
+        print('       Run to see full output:', ' '.join(CMD))
+
 if __name__ == "__main__":
   argc = len(sys.argv)
 
@@ -142,6 +166,7 @@ if __name__ == "__main__":
   link_info = grab_link(link_file)
   while link_info['url'].strip():
     if config.FETCH_WGET:       fetch_wget(link_info)
+    if config.FETCH_FAVICON:    fetch_favicon(link_info)
     if config.FETCH_PDF:        fetch_pdf(link_info)
     if config.FETCH_SCREENSHOT: fetch_screenshot(link_info)
     if config.SUBMIT_ARCHIVE:   archive_dot_org(link_info)
